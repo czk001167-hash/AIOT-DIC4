@@ -26,6 +26,7 @@
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
@@ -33,6 +34,8 @@
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -59,17 +62,17 @@ Conventional fixed-time traffic signal controllers are pre-configured from histo
 % [B] But (Challenge)
 Meanwhile, many modern adaptive signal control approaches rely on deep reinforcement learning, large language models (LLMs), or network-wide simulation frameworks that are too computationally heavy and opaque for constrained edge hardware.
 % [C] Cure
-This paper presents the \textit{Traffic Timing Assistant}, an explainable Domain AI Agent designed for two-axis through-traffic control at an isolated intersection using an ARM/FPGA co-execution architecture.
+This paper presents the \textit{Traffic Timing Assistant}, an explainable Domain AI Agent designed for two-axis through-traffic control at an isolated intersection using an ARM/FPGA Artificial Intelligence of Things (AIoT) co-execution architecture.
 % [D] Development
 The system integrates data sufficiency validation, recent-arrival and queue-state estimation, constrained timing-plan selection via a compact decision tree across three discrete modes (\textit{Balanced}, \textit{North--South Priority}, and \textit{East--West Priority}), deterministic rule-based fallback for out-of-domain states, cycle-boundary actuation on the FPGA, and hardware readback verification.
 % [E] Experiments
 Under identical synthetic arrival inputs, the proposed policy is benchmarked against a fixed-balanced baseline using Queue Vehicle-Seconds (QVS), average waiting time, remaining unserved vehicles, directional disparity, and hardware execution consistency.
 % [F] Findings
-Preliminary paired host simulations achieve total QVS reductions of 18.28\% across 18 scenarios (with 5 degraded cases) and 19.71\% across 6 scenarios (with 2 degraded cases), while development-board tests confirm cycle-boundary plan activation and queue reduction in a directional-shift scenario. Because traffic performance is evaluated under simplified first-in, first-out (FIFO) queue models, real-world road benefits require separate field validation.
+Preliminary paired host simulations achieve total QVS reductions of 18.28\% across 18 scenarios (with 5 degraded cases) and 19.71\% across 6 scenarios (with 2 degraded cases), with degraded cases concentrated in balanced and sudden-burst demand regimes, while development-board tests confirm cycle-boundary plan activation and queue reduction in a directional-shift scenario. Because traffic performance is evaluated under simplified first-in, first-out (FIFO) queue models, real-world road benefits require separate field validation.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Adaptive traffic signal control, edge AIoT, explainable decision tree, ARM/FPGA co-design, rule-based fallback, hardware readback verification.
+Adaptive traffic signal control, Artificial Intelligence of Things (AIoT), explainable decision tree, ARM/FPGA co-design, rule-based fallback, hardware readback verification.
 \end{IEEEkeywords}
 
 % ==============================================================================
@@ -78,7 +81,7 @@ Adaptive traffic signal control, edge AIoT, explainable decision tree, ARM/FPGA 
 \section{Introduction}
 
 % [G] Current State
-Urban intersections rely on traffic signal controllers to allocate shared green time across conflicting movement axes. Traditional fixed-time signal plans are tuned from average traffic profiles and struggle when demand becomes directionally skewed, shifts across periods, or experiences sudden surges. Real-world municipal pilots and empirical traffic studies demonstrate the potential of demand-responsive signal timing: a Hong Kong adaptive signal pilot reported improved responsiveness to dynamic vehicle and pedestrian demand~\cite{ref_hk}, while big-data adaptive timing analyses across 100 cities indicated potential reductions in urban congestion and emissions~\cite{ref_wu}. Corridor field trials similarly report meaningful reductions in average vehicle delay when timings dynamically follow observed demand.
+Urban intersections rely on traffic signal controllers to allocate shared green time across conflicting movement axes. Traditional fixed-time signal plans are tuned from average traffic profiles and struggle when demand becomes directionally skewed, shifts across periods, or experiences sudden surges. Real-world municipal pilots and empirical traffic studies demonstrate the potential of demand-responsive signal timing: a Hong Kong adaptive signal pilot reported improved responsiveness to dynamic vehicle and pedestrian demand~\cite{ref_hk}, while big-data adaptive timing analyses across 100 cities indicated potential reductions in urban congestion and emissions~\cite{ref_wu}.
 
 % [H] Challenges
 Despite these encouraging results, two practical challenges hinder lightweight edge deployment and instructional or engineering validation:
@@ -88,7 +91,7 @@ Despite these encouraging results, two practical challenges hinder lightweight e
 \end{enumerate}
 
 % [I] Literature Categories & [J] Literature Critique
-Existing literature spans verifiable tree-policy extraction from neural networks~\cite{ref_viper}, multi-intersection LLM collaboration~\cite{ref_collmlight}, hierarchical upper/lower incident control~\cite{ref_vtp}, urban field pilots~\cite{ref_hk}, city-scale emission modeling~\cite{ref_wu}, and formal signal engineering manuals~\cite{ref_fhwa}. However, heavy multi-agent graph and LLM architectures are designed for large-scale simulation environments rather than transparent, resource-bounded edge development boards.
+Prior research spans both AI control architectures---such as policy distillation into inspectable decision trees~\cite{ref_viper} and multi-agent or hierarchical LLM controllers~\cite{ref_collmlight, ref_vtp}---and traffic domain studies covering adaptive deployments~\cite{ref_hk, ref_wu} and signal timing engineering standards~\cite{ref_fhwa}. However, heavy graph and LLM models target large-scale simulation environments rather than transparent, resource-bounded embedded development boards.
 
 % [K] Core Contributions & Scope
 To address this gap, we propose the \textit{Traffic Timing Assistant}, a scoped Domain AI Agent targeting two-axis through-traffic at an isolated intersection. Designed for classroom demonstrators and embedded AIoT developers, the system establishes end-to-end traceability from input data to hardware actuation around three core objectives:
@@ -107,14 +110,11 @@ The remainder of this paper is organized as follows. Section~II reviews related 
 % ==============================================================================
 \section{Related Work}
 
-% [M] Balanced Taxonomy (1/2 AI + 1/2 Traffic Domain)
-To balance algorithmic interpretability with traffic engineering rigor, we examine three representative AI control studies~\cite{ref_viper, ref_collmlight, ref_vtp} and three traffic domain references~\cite{ref_hk, ref_wu, ref_fhwa}.
-
-% [N] Research Trends and Evolution
-Across the AI literature, research progresses from distilling neural policies into inspectable decision trees (VIPER~\cite{ref_viper}) toward multi-intersection LLM collaboration (CoLLMLight~\cite{ref_collmlight}) and hierarchical upper-level LLM tuning paired with lower-level signal control (Virtual Traffic Police~\cite{ref_vtp}). Across the traffic domain, sources span practical urban adaptive pilots~\cite{ref_hk}, macro-scale data-driven emission modeling~\cite{ref_wu}, and foundational phase-timing constraints~\cite{ref_fhwa}.
+% [M] Balanced Taxonomy & [N] Research Trends and Evolution
+To balance algorithmic interpretability with traffic engineering rigor, we examine three representative AI control studies~\cite{ref_collmlight, ref_vtp, ref_viper} alongside three traffic engineering references~\cite{ref_hk, ref_wu, ref_fhwa}. Across AI control methods, work evolves from distilling neural policies into inspectable decision trees (VIPER~\cite{ref_viper}) toward multi-intersection LLM collaboration (CoLLMLight~\cite{ref_collmlight}) and hierarchical upper-level LLM tuning paired with lower-level signal control (Virtual Traffic Police~\cite{ref_vtp}). Across the traffic domain, sources span practical urban adaptive pilots~\cite{ref_hk}, macro-scale data-driven emission modeling~\cite{ref_wu}, and foundational phase-timing constraints~\cite{ref_fhwa}.
 
 % [O] Article Summary Table and Research Gap Derivation
-Table~\ref{tab:related_work} compares all six references across problem scope, AI method, domain knowledge, dataset, findings, and limitations.
+Table~\ref{tab:related_work} compares these six references across problem scope, AI method, domain knowledge, dataset, findings, and limitations.
 
 \begin{table*}[t]
 \centering
@@ -125,11 +125,11 @@ Table~\ref{tab:related_work} compares all six references across problem scope, A
 \toprule
 \textbf{Ref} & \textbf{Year} & \textbf{Problem} & \textbf{AI Method} & \textbf{Domain Knowledge} & \textbf{Dataset} & \textbf{Findings} & \textbf{Limitation} \\
 \midrule
-\cite{ref_viper} (VIPER) & 2018 & Learning policies are hard to inspect & Extract decision trees from reference neural policies & Policy, action values, and control properties & Pong, Cart-Pole, and control tasks & Tree policies support inspection and property verification & Non-traffic study; adopted here only for tree representation \\
-\cite{ref_collmlight} (CoLLMLight) & 2025 & Multi-intersection coordination deficit & Spatio-temporal graphs, LLM collaboration and fine-tuning & Adjacent intersections and demand changes & Jinan, Hangzhou, NYC flows; CityFlow & Cooperative reasoning aids tested control scenarios & Simulation-only; compute and scope exceed single-board edge target \\
-\cite{ref_vtp} (VTP) & 2026 & Difficult adjustment under unforeseen incidents & Upper-level LLM parameter tuning and verification & Incident conditions and lower-level control rules & SUMO single-intersection incident simulation & Hierarchical split between upper decision and lower control & Preprint; incident handling does not equal road safety certification \\
 \cite{ref_hk} (HK Pilot) & 2025 & Fixed plans fail to match dynamic demand & AI analytics (implementation details undisclosed) & Time-of-day, directional, and pedestrian/vehicle demand & Tung Chung intersection pilot report & Provides practical motivation for adaptive signal timing & Full controlled experimental comparison not publicly disclosed \\
 \cite{ref_wu} (Wu et al.) & 2025 & Signal impact on congestion and emissions & Data-driven adaptive signal timing & Flow, capacity, and applicability regimes & 100-city Chinese data and CBEngine simulation & Estimated benefits vary by city and demand profile & Simulation estimates cannot be extrapolated directly to our prototype \\
+\cite{ref_collmlight} (CoLLMLight) & 2025 & Multi-intersection coordination deficit & Spatio-temporal graphs, LLM collaboration and fine-tuning & Adjacent intersections and demand changes & Jinan, Hangzhou, NYC flows; CityFlow & Cooperative reasoning aids tested control scenarios & Simulation-only; compute and scope exceed single-board edge target \\
+\cite{ref_vtp} (VTP) & 2026 & Difficult adjustment under unforeseen incidents & Upper-level LLM parameter tuning and verification & Incident conditions and lower-level control rules & SUMO single-intersection incident simulation & Hierarchical split between upper decision and lower control & Preprint; incident handling does not equal road safety certification \\
+\cite{ref_viper} (VIPER) & 2018 & Learning policies are hard to inspect & Extract decision trees from reference neural policies & Policy, action values, and control properties & Pong, Cart-Pole, and control tasks & Tree policies support inspection and property verification & Non-traffic study; adopted here only for tree representation \\
 \cite{ref_fhwa} (FHWA) & 2008 & Trade-off between throughput and phase limits & Non-AI engineering standard & Green, yellow, all-red clearance, and pedestrians & Engineering concepts, formulas, and case studies & Establishes foundational framework for timing and evaluation & Superseded by newer editions; reflects U.S. rather than local regulations \\
 \bottomrule
 \end{tabular}
@@ -137,7 +137,7 @@ Table~\ref{tab:related_work} compares all six references across problem scope, A
 
 Synthesizing Table~\ref{tab:related_work} clarifies our research positioning:
 \begin{itemize}
-    \item \textbf{Existing Research:} Prior studies cover tree-based policy representation~\cite{ref_viper}, cooperative LLM control~\cite{ref_collmlight}, hierarchical decomposition~\cite{ref_vtp}, adaptive pilots~\cite{ref_hk}, city-scale emission estimation~\cite{ref_wu}, and phase-timing constraints~\cite{ref_fhwa}.
+    \item \textbf{Existing Research:} Prior work establishes urban adaptive motivation~\cite{ref_hk, ref_wu}, cooperative and hierarchical LLM control~\cite{ref_collmlight, ref_vtp}, inspectable tree policy representation~\cite{ref_viper}, and formal phase-timing constraints~\cite{ref_fhwa}.
     \item \textbf{Limitations:} High-capacity graph/LLM models and large traffic simulators exceed the compute budget and transparency needs of small embedded boards.
     \item \textbf{Research Gap:} Linking input data quality checks, interpretable plan rationale, and verifiable hardware execution on constrained edge hardware remains underexplored.
     \item \textbf{Our Project:} We pair a compact decision tree with deterministic rule fallback inside a layered ARM/FPGA architecture benchmarked against fixed-balanced timing, emphasizing \textit{explainable system integration} rather than claiming a novel theoretical control law.
@@ -150,12 +150,12 @@ Synthesizing Table~\ref{tab:related_work} clarifies our research positioning:
 
 \subsection{Domain Design Rationale and Trade-offs}
 % [PA-PF] Core Mindsets (M1-M5) and Engineering Trade-offs (C1-C3)
-Drawing from~\cite{ref_viper, ref_collmlight, ref_vtp, ref_hk, ref_wu, ref_fhwa}, five core mindsets and three architectural trade-offs shape our design:
+Drawing from~\cite{ref_hk, ref_wu, ref_collmlight, ref_vtp, ref_viper, ref_fhwa}, five core mindsets and three architectural trade-offs shape our design:
 \begin{enumerate}
     \item \textbf{M1 --- Demand-Driven Formulation:} Because adaptive gains vary across demand regimes~\cite{ref_hk, ref_wu}, scenarios span balanced, skewed, and shifting demand alongside a fixed-time baseline.
     \item \textbf{M2 --- Decoupled Decision and Execution:} Following hierarchical control~\cite{ref_vtp}, the ARM host executes traffic analytics and plan selection while the FPGA enforces safe phase sequencing and countdown timers.
     \item \textbf{M3 --- Teacher-Rule Approximation Awareness:} Inspired by VIPER~\cite{ref_viper}, the decision tree learns from domain scoring rules; approximation errors are acknowledged rather than assuming the tree outperforms teacher rules.
-    \item \textbf{M4 --- Evidence-Scoped Claims:} Per simulation-vs.-pilot distinctions~\cite{ref_collmlight, ref_vtp, ref_hk}, data diagnostics, host FIFO simulations, and board-level execution are evaluated separately.
+    \item \textbf{M4 --- Evidence-Scoped Claims:} Per simulation-vs.-pilot distinctions~\cite{ref_hk, ref_collmlight, ref_vtp}, data diagnostics, host FIFO simulations, and board-level execution are evaluated separately.
     \item \textbf{M5 --- Retention of Negative Counterexamples:} Per multi-objective signal trade-offs~\cite{ref_fhwa}, aggregate average gains can hide localized directional penalties; both improved and degraded cases are retained.
 \end{enumerate}
 
@@ -167,8 +167,48 @@ Three explicit engineering trade-offs resolve key design tensions:
 \end{itemize}
 
 \subsection{Eight-Module Closed-Loop Architecture}
-% [PG] Architecture Diagram Modules 1-8 (Core Ready vs. Integration Target)
-The \textit{Traffic Timing Assistant} organizes software analytics and FPGA hardware control into an eight-module closed loop:
+% [PG] Architecture Diagram (Fig. 1) and Modules 1-8
+As shown in Fig.~\ref{fig:arch}, the \textit{Traffic Timing Assistant} organizes software analytics and FPGA hardware control into an eight-module closed loop, separating core ready modules from integration targets:
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=0.38cm and 0.45cm,
+    core/.style={rectangle, draw=black, rounded corners=2pt, align=center, font=\scriptsize, minimum width=3.9cm, inner sep=3.5pt, fill=white},
+    integ/.style={rectangle, draw=black, dashed, rounded corners=2pt, align=center, font=\scriptsize, minimum width=3.9cm, inner sep=3.5pt, fill=gray!8},
+    side/.style={rectangle, draw=black, rounded corners=2pt, align=center, font=\scriptsize, minimum width=2.45cm, inner sep=3.5pt, fill=white},
+    sidenew/.style={rectangle, draw=black, dashed, rounded corners=2pt, align=center, font=\scriptsize, minimum width=2.45cm, inner sep=3.5pt, fill=gray!8},
+    arr/.style={-{Stealth[length=4pt]}, line width=0.6pt},
+    darr/.style={-{Stealth[length=4pt]}, dashed, line width=0.6pt}
+]
+\node[integ] (m1) {\textbf{1. User \& Structured Request}\\Data Source \& Display Mode};
+\node[integ, below=of m1] (m2) {\textbf{2. Data Source \& Validation}\\Source, Time, Units \& Quality};
+\node[sidenew, right=0.55cm of m2] (halt) {\textbf{Report Gap}\\Halt Control \& Explain};
+\node[core, below=0.45cm of m2] (m3) {\textbf{3. Analysis Engine}\\Recent Arrivals \& Est.\ Queues};
+\node[core, below=of m3] (m4) {\textbf{4. Decision Tree}\\Balanced / N--S / E--W Priority};
+\node[side, right=0.55cm of m4] (m5) {\textbf{5. Domain Limits}\\Legal Plans, Fallback \& Phase};
+\node[integ, below=of m4] (m6) {\textbf{6. Rationale \& Reporting}\\Features, Choice Reason \& Result};
+\node[core, below=of m6] (m7) {\textbf{7. ARM / FPGA Execution}\\Submit Plan at Cycle Boundary};
+\node[core, below=of m7] (m8) {\textbf{8. Readback \& Display}\\Verify Plan, Phase \& Countdown};
+
+\draw[darr] (m1) -- (m2);
+\draw[darr] (m2) -- node[above, font=\tiny]{Insufficient} (halt);
+\draw[darr] (m2) -- node[right, font=\tiny]{Valid} (m3);
+\draw[arr] (m3) -- (m4);
+\draw[arr] (m5) -- (m4);
+\draw[darr] (m4) -- (m6);
+\draw[darr] (m6) -- (m7);
+\draw[arr] (m7) -- (m8);
+
+% Execution evidence feedback (8 -> 6)
+\draw[arr] (m8.west) -- ++(-0.35,0) |- node[pos=0.25, left, font=\tiny, align=center]{Exec.\\Evidence} (m6.west);
+% State feedback (8 -> 3)
+\draw[arr] (m8.west) -- ++(-0.85,0) |- node[pos=0.25, left, font=\tiny, align=center]{State\\Feedback} (m3.west);
+\end{tikzpicture}
+\caption{Eight-module closed-loop system architecture of the Traffic Timing Assistant. Solid boxes indicate core ready modules; dashed boxes indicate integration modules.}
+\label{fig:arch}
+\end{figure}
+
 \begin{enumerate}
     \item \textbf{Module 1 --- User \& Structured Request} \textit{(Integration Target)}: Specifies the traffic data source and mode (closed-loop actuation or review-only recommendation).
     \item \textbf{Module 2 --- Data Source \& Validation} \textit{(Integration Target)}: Verifies source identity, timestamps, unit consistency, and history sufficiency; halts control and reports gaps when data are insufficient.
@@ -181,17 +221,50 @@ The \textit{Traffic Timing Assistant} organizes software analytics and FPGA hard
 \end{enumerate}
 
 \subsection{Processing Workflow and Core Algorithm}
-% [PH-PI] Flowchart Logic and 12-line Pseudocode
-At each observation step, the controller verifies data sufficiency before updating queue and arrival estimates. At designated decision boundaries, in-domain features invoke the compact decision tree whereas out-of-domain features trigger deterministic rule fallback. Before hardware actuation, the system logs decision rationale and checks review-only mode and plan/device validity. Validated plans are applied by the FPGA at the next complete cycle boundary and verified via readback, as formalized in Algorithm~\ref{alg:control_loop}.
+% [PH-PI] Flowchart (Fig. 2) and 12-line Pseudocode (Algorithm 1)
+Fig.~\ref{fig:flow} illustrates the runtime decision and verification flow. At each observation step, the controller verifies data sufficiency before updating queue and arrival estimates. At designated decision boundaries, in-domain features invoke the compact decision tree whereas out-of-domain features trigger deterministic rule fallback. Before hardware actuation, the system logs decision rationale and checks review-only mode and plan/device validity. Validated plans are applied by the FPGA at the next complete cycle boundary and verified via readback, as formalized in Algorithm~\ref{alg:control_loop}.
 
 \begin{figure}[t]
 \centering
-\hrule
-\vspace{4pt}
-\noindent\textbf{Algorithm 1:} Integrated Timing Decision and Verification Loop
-\vspace{3pt}
-\hrule
-\vspace{4pt}
+\begin{tikzpicture}[
+    node distance=0.35cm and 0.5cm,
+    proc/.style={rectangle, draw=black, rounded corners=2pt, align=center, font=\scriptsize, minimum width=3.3cm, inner sep=3pt},
+    dec/.style={diamond, draw=black, aspect=2.3, align=center, font=\scriptsize, inner sep=1pt},
+    side/.style={rectangle, draw=black, align=center, font=\scriptsize, minimum width=2.4cm, inner sep=3pt},
+    arr/.style={-{Stealth[length=4pt]}, line width=0.6pt}
+]
+\node[proc] (in) {Input Request \& Traffic Data};
+\node[dec, below=of in] (qdata) {Data Sufficient?};
+\node[side, right=0.5cm of qdata] (stop) {Report Gap\\\& Stop};
+\node[proc, below=0.4cm of qdata] (upd) {Update Arrivals \& Queues};
+\node[dec, below=0.45cm of upd] (qdom) {In-Domain?};
+\node[side, right=0.5cm of qdom] (fb) {Rule Fallback\\Select Plan};
+\node[proc, below=0.4cm of qdom] (tree) {Decision Tree Select Plan};
+\node[dec, below=0.4cm of tree] (qsub) {Committable?};
+\node[side, right=0.5cm of qsub] (inv) {Invalid / Stale:\\Report Reason};
+\node[proc, below=0.4cm of qsub] (act) {Submit Plan; Apply at\\Next Complete Cycle};
+\node[proc, below=of act] (read) {Confirm Readback \&\\Summarize Rationale};
+
+\draw[arr] (in) -- (qdata);
+\draw[arr] (qdata) -- node[above, font=\tiny]{No} (stop);
+\draw[arr] (qdata) -- node[right, font=\tiny]{Yes} (upd);
+\draw[arr] (upd) -- node[right, font=\tiny]{At Decision Boundary} (qdom);
+\draw[arr] (qdom) -- node[above, font=\tiny]{No} (fb);
+\draw[arr] (qdom) -- node[right, font=\tiny]{Yes} (tree);
+\draw[arr] (fb) |- ($(tree.south)!0.4!(qsub.north)$);
+\draw[arr] (tree) -- (qsub);
+\draw[arr] (qsub) -- node[above, font=\tiny]{No} (inv);
+\draw[arr] (qsub) -- node[right, font=\tiny]{Yes} (act);
+\draw[arr] (act) -- (read);
+\draw[arr] (read.west) -- ++(-0.6,0) |- node[pos=0.25, left, font=\tiny, align=center]{Next\\Obs.} (upd.west);
+\end{tikzpicture}
+\caption{Processing workflow enforcing separated data-sufficiency, domain-applicability, and hardware-readback gates.}
+\label{fig:flow}
+\end{figure}
+
+\begin{algorithm}[t]
+\caption{Integrated Timing Decision and Verification Loop}
+\label{alg:control_loop}
 \begin{algorithmic}[1]
 \STATE Read task mode and traffic data
 \IF{data is insufficient}
@@ -219,22 +292,24 @@ At each observation step, the controller verifies data sufficiency before updati
 \ENDFOR
 \STATE Summarize decisions, execution results, and limitations
 \end{algorithmic}
-\vspace{4pt}
-\hrule
-\label{alg:control_loop}
-\end{figure}
+\end{algorithm}
 
-Separating data sufficiency (Line~2), domain applicability (Line~9), and hardware readback (Lines~18--22) provides end-to-end auditability from raw input to physical signal actuation.
+Separating data sufficiency (Line~2), domain applicability (Line~10), and hardware readback (Lines~21--22) provides end-to-end auditability from raw input to physical signal actuation.
 
 \subsection{Case Design and Queue Formulation}
 % [PJ-PM] Case Representation, Data Design, and Mathematical Queue Conservation
-Constraining the output space to three discrete timing plans (\textit{Balanced}, \textit{N--S Priority}, \textit{E--W Priority}) over four numerical demand features simplifies both tree interpretability and hardware state verification. Training labels are generated from a domain timing-scoring rule, while synthetic arrival profiles enable reproducible second-by-second paired evaluation. Official minute-level traffic records are assessed separately for continuity and data quality rather than used directly as per-second simulation inputs.
+Constraining the output space to three discrete timing plans (\textit{Balanced}, \textit{N--S Priority}, \textit{E--W Priority}) over four numerical demand features simplifies both tree interpretability and hardware state verification. Training labels are generated from a domain timing-scoring rule, with phase boundaries bounded by configured minimum green, maximum green, and clearance constraints in Module~5. Synthetic arrival profiles enable reproducible second-by-second paired evaluation, whereas official minute-level traffic records are assessed separately for continuity and data quality rather than used directly as per-second simulation inputs.
 
-Under discrete-time first-in, first-out (FIFO) queue conservation over horizon $T$ seconds, cumulative \textit{Queue Vehicle-Seconds} (QVS) is formulated as:
+Under discrete-time first-in, first-out (FIFO) queue conservation over horizon $T$ seconds, the per-axis queue evolves at each second $t$ as:
 \begin{equation}
-\text{QVS} = \sum_{t=1}^{T} \left( q_{\text{NS}}(t) + q_{\text{EW}}(t) \right),
+q_d(t+1) = \max\bigl(0,\, q_d(t) + a_d(t) - s_d(t)\bigr), \quad d \in \{\text{NS}, \text{EW}\},
+\label{eq:queue_update}
 \end{equation}
-where $q_{\text{NS}}(t)$ and $q_{\text{EW}}(t)$ denote the queued vehicles on the North--South and East--West axes at second $t$, respectively.
+where $a_d(t)$ denotes vehicle arrivals and $s_d(t)$ denotes served departures permitted by the active FPGA signal phase and intersection service capacity. Cumulative \textit{Queue Vehicle-Seconds} (QVS) over horizon $T$ is then defined as:
+\begin{equation}
+\text{QVS} = \sum_{t=1}^{T} \left( q_{\text{NS}}(t) + q_{\text{EW}}(t) \right).
+\label{eq:qvs}
+\end{equation}
 
 % ==============================================================================
 % SECTION IV: EXPERIMENT [Q-V]
@@ -243,13 +318,31 @@ where $q_{\text{NS}}(t)$ and $q_{\text{EW}}(t)$ denote the queued vehicles on th
 
 \subsection{Evaluation Metrics, Baseline, and Scenarios}
 % [Q] Metrics, [R] Baseline, [S] Scenarios
-Under identical arrival sequences and service capacities, we compare the proposed \textit{Decision Tree + Rule Fallback} policy against a \textit{Fixed Balanced Timing} baseline across five synthetic traffic regimes: (1) balanced flow, (2) unidirectional skew, (3) directional shift, (4) sudden burst spike, and (5) overload conditions.
+Under identical arrival sequences and service capacities~\eqref{eq:queue_update}, we compare the proposed \textit{Decision Tree + Rule Fallback} policy against a \textit{Fixed Balanced Timing} baseline across the five synthetic traffic regimes summarized in Table~\ref{tab:scenarios}.
 
-The primary metric is QVS (1), where lower values indicate reduced cumulative queue burden. Auxiliary indicators include average waiting time (interpreted alongside remaining unserved vehicles), directional delay disparity, and hardware readback match between recommended and applied plans.
+The primary metric is QVS~\eqref{eq:qvs}, where lower values indicate reduced cumulative queue burden. Auxiliary indicators include average waiting time (interpreted alongside remaining unserved vehicles), directional delay disparity, and hardware readback match between recommended and applied plans.
 
-\subsection{Staged Integration and Preliminary Results}
-% [T] Staged Work Plan / Tuning & [U] Preliminary Quantitative Results + Degraded Cases
-Table~\ref{tab:prelim_results} summarizes preliminary prototype validation across two independent host paired test batches and a development-board control test. Each suite is reported independently without pooling into a single summary figure, and all degraded cases are explicitly retained. Table~\ref{tab:roadmap} outlines the staged integration and acceptance plan, noting that systematic parameter sweeps and ablation studies across degraded regimes remain ongoing integration work.
+\begin{table}[t]
+\centering
+\caption{Synthetic Evaluation Regimes and Benchmark Purpose}
+\label{tab:scenarios}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}p{2.2cm}p{2.6cm}p{3.0cm}@{}}
+\toprule
+\textbf{Traffic Regime} & \textbf{Demand Profile} & \textbf{Evaluation Objective} \\
+\midrule
+Balanced Flow & Comparable N--S and E--W arrivals & Verify whether adaptive switching avoids unnecessary overhead \\
+Unidirectional Skew & Persistent priority on one axis & Test green reallocation toward dominant queue \\
+Directional Shift & Dominant axis reverses mid-run & Evaluate responsiveness across cycle-boundary switching \\
+Sudden Burst Spike & Short-duration arrival surge & Stress-test hysteresis and fallback boundary behavior \\
+Overload Condition & Arrivals exceed total capacity & Verify out-of-domain rule fallback and unserved-vehicle reporting \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Preliminary Validation Results}
+% [T] Staged Validation & [U] Preliminary Quantitative Results + Degraded Cases
+Table~\ref{tab:prelim_results} summarizes preliminary prototype validation across two independent host paired test batches and a development-board control test. Each suite is reported independently without pooling into a single headline number, and all degraded cases (concentrated in balanced and sudden-burst demand regimes) are explicitly retained. Systematic parameter sweeps quantifying per-scenario arrival rates, green splits, and board-level timing latency remain part of ongoing integration and validation work.
 
 \begin{table}[t]
 \centering
@@ -267,25 +360,9 @@ Dev-Board Paired Test & Confirmed cycle-boundary activation; QVS decreased in di
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
-\centering
-\caption{Project Development Stages and Acceptance Criteria}
-\label{tab:roadmap}
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{@{}p{1.9cm}p{2.8cm}p{3.1cm}@{}}
-\toprule
-\textbf{Stage} & \textbf{Planned Work} & \textbf{Acceptance Criterion} \\
-\midrule
-Foundation Ready & Decision tree, FPGA control, and preliminary baseline comparison & Reproducible plan selection and hardware readback \\
-Workflow Integration & Unified request entry, data validation, and rationale reporting & Single task links data, choice rationale, and results \\
-Validation \& Demo & Consolidate comparisons, degraded cases, and operational limits & Reproducible data rejection, fallback, and activation verification \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 \subsection{Validity Scope and Limitations}
 % [V] Validity Limitations
-All traffic efficiency metrics in Table~\ref{tab:prelim_results} originate from synthetic inputs and a simplified FIFO queue model rather than live roadside trials. Hardware execution verification and simulated traffic efficiency are evaluated independently. Moreover, available official minute-level traffic records lack the continuous, dual-axis per-second resolution required for closed-loop intersection control simulation and are therefore restricted to data-quality diagnostics.
+All traffic efficiency metrics in Table~\ref{tab:prelim_results} originate from synthetic inputs and the simplified FIFO queue model~\eqref{eq:queue_update} rather than live roadside trials. Hardware execution verification and simulated traffic efficiency are evaluated independently. Integration work on unified request entry, cross-source validation, and unified rationale reporting (Modules~1, 2, and~6 in Fig.~\ref{fig:arch}) is ongoing. Moreover, available official minute-level traffic records lack the continuous, dual-axis per-second resolution required for closed-loop intersection control simulation and are therefore restricted to data-quality diagnostics.
 
 % ==============================================================================
 % SECTION V: CONCLUSION [W-Z]
@@ -304,18 +381,21 @@ The prototype establishes an auditable decision-to-readback pipeline validated t
 % [Z] Limitations and Future Work
 Several limitations define concrete directions for future work:
 \begin{itemize}
-    \item \textbf{Degraded-Case Ablation:} Conduct systematic parameter sweeps and root-cause analyses across the 7 combined degraded scenarios—particularly balanced and sudden-burst demand regimes—to refine decision thresholds and cycle-switching hysteresis.
+    \item \textbf{Degraded-Case Ablation:} Conduct systematic parameter sweeps and root-cause analyses across the degraded cases observed in both host test batches (5 of 18 and 2 of 6)---particularly balanced and sudden-burst demand regimes---to refine decision thresholds and cycle-switching hysteresis.
     \item \textbf{High-Resolution Empirical Data:} Incorporate continuous per-second roadside sensor logs to replace simplified FIFO synthetic assumptions and validate real-world arrival dynamics.
     \item \textbf{Extended Intersection Modeling:} Expand control capabilities to pedestrian clearance phases, protected/permitted turning movements, sensor noise robustness, and multi-intersection coordination.
 \end{itemize}
 
 % ==============================================================================
-% REFERENCES (IEEE Style)
+% REFERENCES (IEEE Style, ordered strictly by first citation appearance)
 % ==============================================================================
 \begin{thebibliography}{00}
 
-\bibitem{ref_viper}
-O.~Bastani, Y.~Pu, and A.~Solar-Lezama, ``Verifiable reinforcement learning via policy extraction,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~31, 2018. [Online]. Available: \url{https://proceedings.neurips.cc/paper/2018/hash/e6d8545daa42d5ced125a4bf747b3688-Abstract.html}
+\bibitem{ref_hk}
+Information Services Department, Hong Kong SAR Government, ``Adaptive system optimises traffic flow,'' Nov.~23, 2025. [Online]. Available: \url{https://www.news.gov.hk/eng/2025/11/20251120/20251120_183103_322.html?type=ticker}
+
+\bibitem{ref_wu}
+K.~Wu \textit{et al.}, ``Big-data empowered traffic signal control could reduce urban carbon emission,'' \textit{Nature Communications}, vol.~16, Art.~no.~2013, 2025, doi: 10.1038/s41467-025-56701-4.
 
 \bibitem{ref_collmlight}
 Z.~Yuan, S.~Lai, and H.~Liu, ``CoLLMLight: Cooperative large language model agents for network-wide traffic signal control,'' \textit{arXiv preprint arXiv:2503.11739v1}, 2025. [Online]. Available: \url{https://arxiv.org/abs/2503.11739v1}
@@ -323,11 +403,8 @@ Z.~Yuan, S.~Lai, and H.~Liu, ``CoLLMLight: Cooperative large language model agen
 \bibitem{ref_vtp}
 S.~Wei, Q.~Wang, and K.~Yang, ``Virtual traffic police: Large language model-augmented traffic signal control for unforeseen incidents,'' \textit{arXiv preprint arXiv:2601.15816v1}, 2026. [Online]. Available: \url{https://arxiv.org/abs/2601.15816v1}
 
-\bibitem{ref_hk}
-Information Services Department, Hong Kong SAR Government, ``Adaptive system optimises traffic flow,'' Nov.~23, 2025. [Online]. Available: \url{https://www.news.gov.hk/eng/2025/11/20251120/20251120_183103_322.html?type=ticker}
-
-\bibitem{ref_wu}
-K.~Wu \textit{et al.}, ``Big-data empowered traffic signal control could reduce urban carbon emission,'' \textit{Nature Communications}, vol.~16, Art.~no.~2013, 2025, doi: 10.1038/s41467-025-56701-4.
+\bibitem{ref_viper}
+O.~Bastani, Y.~Pu, and A.~Solar-Lezama, ``Verifiable reinforcement learning via policy extraction,'' in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, vol.~31, 2018. [Online]. Available: \url{https://proceedings.neurips.cc/paper/2018/hash/e6d8545daa42d5ced125a4bf747b3688-Abstract.html}
 
 \bibitem{ref_fhwa}
 P.~Koonce \textit{et al.}, \textit{Traffic Signal Timing Manual}, Federal Highway Administration (FHWA), Rep.~FHWA-HOP-08-024, 2008. [Online]. Available: \url{https://ops.fhwa.dot.gov/publications/fhwahop08024/fhwa_hop_08_024.pdf}

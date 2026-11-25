@@ -36,7 +36,7 @@
 
 | Code | A–Z Element | Required Content in *Traffic Timing Assistant* |
 | :--- | :--- | :--- |
-| **G** | Current State (現況) | Shared green time under fixed plans; real-world adaptive motivation from HK pilot `[4]` and 100-city study `[5]`. |
+| **G** | Current State (現況) | Shared green time under fixed plans; real-world adaptive motivation from HK pilot `[1]` and 100-city study `[2]`. |
 | **H** | Challenges (挑戰) | Two gaps: lack of decision explainability/execution auditability, and compute/safety limits of complex AI on embedded boards. |
 | **I** | Literature Categories (文獻分類) | Policy distillation (`VIPER`), multi-agent/hierarchical LLM (`CoLLMLight`, `VTP`), and domain pilots/standards (`HK`, `Wu et al.`, `FHWA`). |
 | **J** | Literature Critique (文獻評述) | Complex graph/LLM methods exceed single-board resources and lack deterministic phase interlocks. |
@@ -47,7 +47,7 @@
 
 | Code | A–Z Element | Required Content in *Traffic Timing Assistant* |
 | :--- | :--- | :--- |
-| **M** | Taxonomy (文獻分類) | Balanced 1/2 AI (`[1]`–`[3]`) + 1/2 Traffic Domain (`[4]`–`[6]`). |
+| **M** | Taxonomy (文獻分類) | Balanced 1/2 AI (`[3]`–`[5]`) + 1/2 Traffic Domain (`[1]`, `[2]`, `[6]`). |
 | **N** | Research Trends (趨勢與脈絡) | Progression from neural-to-tree distillation, multi-intersection LLMs, and hierarchical control to city-scale impact and FHWA phase rules. |
 | **O** | Comparison Table & Gap (比較與缺口) | 8-column `Article Summary Table` (`Ref`, `Year`, `Problem`, `AI Method`, `Domain Knowledge`, `Dataset`, `Findings`, `Limitation`) + `Existing → Limitations → Gap → Our Project`. |
 
@@ -79,5 +79,5 @@
 | **W** | Restate Significance (重申意義) | **Fixes Proposal Gap W–Z:** Reaffirms explainable, verifiable edge AIoT control for isolated intersections. |
 | **X** | Methodological Distinction (方法特色) | Compact decision tree + rule fallback + ARM/FPGA co-execution with deterministic cycle-boundary switching. |
 | **Y** | Deliverables & Outcomes (成果交付) | Auditable decision logs, paired baseline benchmark, and hardware readback confirmation. |
-| **Z** | Limitations & Future Work (限制與展望) | Root-cause ablation on the 7 degraded scenarios, high-resolution per-second field logs, pedestrian/turning phases, sensor noise, multi-intersection coordination. |
+| **Z** | Limitations & Future Work (限制與展望) | Root-cause ablation on the degraded cases (`5/18` and `2/6`), high-resolution per-second field logs, pedestrian/turning phases, sensor noise, multi-intersection coordination. |
 | **Refs** | IEEE Bibliography | Complete `[1]`–`[6]` IEEE citations matching `第13組_Proposal.pdf`. |
