@@ -1,8 +1,33 @@
-﻿# 交通配時助手（Traffic Timing Assistant）
+# 交通配時助手（Traffic Timing Assistant）
 
 ![A–Z 分析圖](./assets/A-Z分析.png)
 
-[A–Z 完整分析（Markdown）](./docs/交通專題分析_A-Z.md)
+[A–Z 完整分析（Markdown）](./docs/交通專題分析_A-Z.md) ｜ [ICEIB 論文草稿（IEEE LaTeX）](./ICEIB%20paper/main.txt) ｜ [ICEIB A–Z 論文對照版](./docs/ICEIB_Paper_A-Z.md) ｜ [ICEIB A–Z 寫作指南](./docs/ICEIB_A-Z_Writing_Guide.md)
+
+
+### 1. GitHub 倉庫連線與初始化
+- 初始化本地 Git 儲存庫（`main` 分支）並連接至遠端倉庫 `https://github.com/czk001167-hash/AIOT-DIC4.git`，完成初始版本上傳與 [第13組_Proposal.pdf](./第13組_Proposal.pdf) 同步。
+
+### 2. 建立 ICEIB IEEE 會議論文初稿
+- 依據 [ICEIB](https://www.iceib.asia/) 會議格式規範與全資料夾內容，建立 IEEEtran 雙欄格式論文草稿 [ICEIB paper/main.txt](./ICEIB%20paper/main.txt)（`\documentclass[conference]{IEEEtran}`）。
+- 全文依標準結構劃分為 **Abstract**、**I. Introduction**、**II. Related Work**、**III. Proposed Design**、**IV. Experiment**、**V. Conclusion** 與 **References**，並依照 2020 A–Z SOP 框架補齊原提案缺少的「緒論章節導覽（L）」與「獨立結論章節（W–Z）」。
+
+### 3. 整理 A–Z 寫作規範與論文對照文件（`docs/`）
+- 新增 [docs/ICEIB_A-Z_Writing_Guide.md](./docs/ICEIB_A-Z_Writing_Guide.md)：定義 2020 A–Z SOP（`A`–`Z` 與 `PA`–`PM`）與 IEEE ICEIB 各章節之對應規範。
+- 新增 [docs/ICEIB_Paper_A-Z.md](./docs/ICEIB_Paper_A-Z.md)：產出完整標註 `[A]`–`[Z]` 標籤的英文論文 Markdown 對照版。
+
+### 4. 啟用 OpenSpec 並建立各章節變動追蹤（`openspec/`）
+- 透過 `openspec init --tools antigravity` 初始化 OpenSpec 與 `.agent/` 工作流，並建立變更案 `iceib-ieee-paper`（含 [proposal.md](./openspec/changes/iceib-ieee-paper/proposal.md)、[design.md](./openspec/changes/iceib-ieee-paper/design.md)、[specs/](./openspec/changes/iceib-ieee-paper/specs)、[tasks.md](./openspec/changes/iceib-ieee-paper/tasks.md)），已通過 `openspec validate iceib-ieee-paper` 驗證。
+- 在 `openspec/changes/iceib-ieee-paper/` 下建立 7 個獨立章節資料夾，逐章記錄相較原始提案的已完成變動與待修改項目（包含修正 IEEE 引用編號順序、修復 `Algorithm 1` 的 `\caption`/`\label` 標籤、補入架構與流程圖、補充場景參數與退步拆解等）：
+  - [abstract/changes.md](./openspec/changes/iceib-ieee-paper/abstract/changes.md)
+  - [introduction/changes.md](./openspec/changes/iceib-ieee-paper/introduction/changes.md)
+  - [related-work/changes.md](./openspec/changes/iceib-ieee-paper/related-work/changes.md)
+  - [proposed-design/changes.md](./openspec/changes/iceib-ieee-paper/proposed-design/changes.md)
+  - [experiment/changes.md](./openspec/changes/iceib-ieee-paper/experiment/changes.md)
+  - [conclusion/changes.md](./openspec/changes/iceib-ieee-paper/conclusion/changes.md)
+  - [reference/changes.md](./openspec/changes/iceib-ieee-paper/reference/changes.md)
+
+---
 
 ## 摘要
 
@@ -33,3 +58,6 @@
 
 ### F. Findings (預期成果與限制)
 預期成果為交付一個可解釋、可在邊緣裝置運行，並具備安全回退機制的交通配時助手展示系統。系統將能依據即時車流狀態，提供均衡、南北優先或東西優先的配時建議，並以決策樹規則說明每次配時選擇的依據。本專題預期在模擬環境中，相較固定配時降低排隊車秒與平均等待時間，並減少尖峰方向與次要方向之間的延滯差異；同時驗證 ARM/FPGA 開發板上的推論結果與控制流程一致性。由於目前採用簡化 FIFO 佇列模型，尚未進行真實路口長期測試；後續仍需納入行人、轉向車流、感測誤差與多路口協調等因素進一步驗證。
+
+
+
